@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	  <TargetFramework>net8.0</TargetFramework>
+	  <ImplicitUsings>enable</ImplicitUsings>
+	  <Nullable>enable</Nullable>
+	  <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+	  <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+	  <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CounterStrikeSharp.API" Version="1.0.263" />
+    <PackageReference Include="Tomlyn" Version="0.17.0" />
+  </ItemGroup>
+	
+	<ItemGroup>
+		<None Update="lang\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Reference Include="StoreApi">
+			<HintPath>StoreApi.dll</HintPath>
+		</Reference>
+	</ItemGroup>
+	
+	<ItemGroup>
+		<Reference Include="WASDSharedAPI">
+			<HintPath>WASDSharedAPI.dll</HintPath>
+		</Reference>
+	</ItemGroup>
+
+</Project>
