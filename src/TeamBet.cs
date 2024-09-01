@@ -223,6 +223,7 @@ public class TeamBet : BasePlugin
 
                 StoreApi.GivePlayerCredits(betPlayer, reward);
                 betPlayer.PrintToChat(Config.Tag + Localizer["YouWonMessage", reward]);
+                GlobalBet.Clear();
                 
             }
         }
@@ -244,6 +245,7 @@ public class TeamBet : BasePlugin
     [GameEventHandler(HookMode.Pre)]
     public HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
     {
+        GlobalBet.Clear();
         hasProcessedRoundEnd = false;
         return HookResult.Continue;
     }
