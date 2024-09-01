@@ -1,5 +1,8 @@
 # Store-TeamBet
 Place different bets on team and won credits! Or lose(D;)
+# Requirements
+[cs2-store](https://github.com/schwarper/cs2-store)
+
 # Config
 ```js
 [Tag]
