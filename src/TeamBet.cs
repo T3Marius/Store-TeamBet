@@ -1,4 +1,4 @@
-﻿using static TeamBet.Config_Config;
+using static TeamBet.Config_Config;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
@@ -7,17 +7,20 @@ using StoreApi;
 using WASDSharedAPI;
 using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API.Core.Capabilities;
+using Timer = CounterStrikeSharp.API.Modules.Timers.Timer;
 
 namespace TeamBet;
 
 public class TeamBet : BasePlugin
 {
     public override string ModuleName => "Store Module [TeamBet]";
-    public override string ModuleVersion => "1.0.0";
+    public override string ModuleVersion => "1.0.1";
     public override string ModuleAuthor => "T3Marius";
     private IStoreApi? StoreApi { get; set; }
+    public Timer? betTimer { get; set; }
 
     private bool hasProcessedRoundEnd = false;
+    private bool isBettingAllowed = false;
     public Dictionary<string, Dictionary<CCSPlayerController, int>> GlobalBet { get; set; } = new Dictionary<string, Dictionary<CCSPlayerController, int>>();
 
     public List<string> Options = new List<string> { "Terrorist", "CounterTerrorist" };
@@ -48,6 +51,12 @@ public class TeamBet : BasePlugin
 
     public void BetTeam(CCSPlayerController player, CommandInfo info, int credits, string option)
     {
+        if (!isBettingAllowed) 
+        {
+            info.ReplyToCommand(Config.Tag + Localizer["Betting Close"]);
+            return;
+        }
+
         if (StoreApi == null)
         {
             throw new Exception("StoreApi could not be located.");
@@ -96,6 +105,12 @@ public class TeamBet : BasePlugin
         if (StoreApi == null)
         {
             throw new Exception("StoreApi could not be located.");
+        }
+
+        if (!isBettingAllowed)
+        {
+            info.ReplyToCommand(Config.Tag + Localizer["Betting Close"]);
+            return;
         }
 
         if (Utilities.FindAllEntitiesByDesignerName<CCSGameRulesProxy>("cs_gamerules").First().GameRules!.WarmupPeriod)
@@ -190,8 +205,14 @@ public class TeamBet : BasePlugin
         {
             GlobalBet[team].Add(player, credits);
         }
-
-        Server.PrintToChatAll(Config.Tag + Localizer["Join bet", player.PlayerName, credits, Localizer[team]]);
+        if (!Config.Settings.ShowBetToAllPlayer)
+        {
+            player.PrintToChat(Config.Tag + Localizer["Join bet", player.PlayerName, credits, Localizer[team]]);
+        }
+        else
+        {
+            Server.PrintToChatAll(Config.Tag + Localizer["Join bet", player.PlayerName, credits, Localizer[team]]);
+        }
     }
 
     [GameEventHandler(HookMode.Pre)]
@@ -220,11 +241,10 @@ public class TeamBet : BasePlugin
                 var betAmount = entry.Value;
 
                 int reward = betAmount * multiplier;
-
+                Convert.ToDouble(reward);
                 StoreApi.GivePlayerCredits(betPlayer, reward);
                 betPlayer.PrintToChat(Config.Tag + Localizer["YouWonMessage", reward]);
                 GlobalBet.Clear();
-                
             }
         }
 
@@ -245,10 +265,30 @@ public class TeamBet : BasePlugin
     [GameEventHandler(HookMode.Pre)]
     public HookResult OnRoundStart(EventRoundStart @event, GameEventInfo info)
     {
+        if (Config.Settings.BetTime > 0)
+        {
+            betTimer?.Kill();
+
+            betTimer = AddTimer(Config.Settings.BetTime, () =>
+            {
+                Server.PrintToChatAll(Config.Tag + Localizer["Betting Close"]);
+                isBettingAllowed = false;
+            });
+
+            Server.PrintToChatAll(Config.Tag + Localizer["Betting Open", Config.Settings.BetTime]);
+            isBettingAllowed = true;
+        }
+        else
+        {
+            isBettingAllowed = true;
+        }
+
         GlobalBet.Clear();
         hasProcessedRoundEnd = false;
+
         return HookResult.Continue;
     }
+
     public HookResult OnCommand_jointeam(CCSPlayerController? player, CommandInfo info)
     {
         if (player == null || !player.IsValid || player.IsBot)
