@@ -11,5 +11,9 @@
   "YouLostMessage": "{red}You lost {0} credits on this bet!",
   "MinPlayers": "There must be at least {green}{0}{default} players to place a bet.",
   "Bet Removed": "Bet {red}removed{default}, credits refunded: {green}{0}",
+  "Betting Close": "Betting is closed for this round.",
+  "Betting Open": "Betting is opened. Closing bets in: {0}",
+  "Empty Team": "Can't bet on an empty team.",
+  "Already Bet": "You aleardy put a {red}bet{default} this round!",
   "Cancel Bet Menu": "Close"
 }

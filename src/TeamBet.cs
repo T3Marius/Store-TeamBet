@@ -1,4 +1,4 @@
-using static TeamBet.Config_Config;
+﻿using static TeamBet.Config_Config;
 using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
 using CounterStrikeSharp.API.Core.Attributes.Registration;
@@ -8,13 +8,16 @@ using WASDSharedAPI;
 using CounterStrikeSharp.API.Modules.Utils;
 using CounterStrikeSharp.API.Core.Capabilities;
 using Timer = CounterStrikeSharp.API.Modules.Timers.Timer;
+using CounterStrikeSharp.API.Core.Translations;
+using System.Text;
+using CounterStrikeSharp.API.Modules.Menu;
 
 namespace TeamBet;
 
 public class TeamBet : BasePlugin
 {
     public override string ModuleName => "Store Module [TeamBet]";
-    public override string ModuleVersion => "1.0.1";
+    public override string ModuleVersion => "1.0.2";
     public override string ModuleAuthor => "T3Marius";
     private IStoreApi? StoreApi { get; set; }
     public Timer? betTimer { get; set; }
@@ -24,14 +27,15 @@ public class TeamBet : BasePlugin
     public Dictionary<string, Dictionary<CCSPlayerController, int>> GlobalBet { get; set; } = new Dictionary<string, Dictionary<CCSPlayerController, int>>();
 
     public List<string> Options = new List<string> { "Terrorist", "CounterTerrorist" };
+    public HashSet<CCSPlayerController> PlayersWhoBet { get; set; } = new HashSet<CCSPlayerController>();
 
-    public static IWasdMenuManager? MenuManager;
+    public static IWasdMenuManager? menuManager;
     public IWasdMenuManager? GetMenuManager()
     {
-        if (MenuManager == null)
-            MenuManager = new PluginCapability<IWasdMenuManager>("wasdmenu:manager").Get();
+        if (menuManager == null)
+            menuManager = new PluginCapability<IWasdMenuManager>("wasdmenu:manager").Get();
 
-        return MenuManager;
+        return menuManager;
     }
 
     public override void OnAllPluginsLoaded(bool hotReload)
@@ -145,37 +149,61 @@ public class TeamBet : BasePlugin
             return;
         }
 
-
-        var manager = GetMenuManager();
-        if (manager == null)
+        if (PlayersWhoBet.Contains(player))
         {
-            info.ReplyToCommand(Config.Tag + "Menu manager is not available.");
+            player.PrintToChat(Config.Tag + Localizer["Already Bet"]);
             return;
         }
-
-        IWasdMenu menu = manager.CreateMenu(Localizer["menu_title", credits]);
-
-        menu.Add("Terrorist", (p, option) =>
+        if (!Config.Settings.UseWasdMenu)
         {
-            ProcessBet(p, info, credits, "Terrorist");
-            manager.CloseMenu(p);
-        });
+            using (new WithTemporaryCulture(player.GetLanguage()))
+            {
+                StringBuilder builder = new();
+                builder.AppendFormat(Localizer["menu_title", credits]);
+                CenterHtmlMenu menu = new(builder.ToString(), this)
+                {
+                    PostSelectAction = PostSelectAction.Close
+                };
+                ProcessBetHtmlMenu(player, menu, info, credits, "Terrorist");
+                ProcessBetHtmlMenu(player, menu, info, credits, "CounterTerrorist");
+                AddCancelOptionToMenu(menu);
 
-        menu.Add("CounterTerrorist", (p, option) =>
+                MenuManager.OpenCenterHtmlMenu(this, player, menu);
+            }
+        }
+        else
         {
-            ProcessBet(p, info, credits, "CounterTerrorist");
-            manager.CloseMenu(p);
-        });
+            var manager = GetMenuManager();
+            if (manager == null)
+            {
+                info.ReplyToCommand(Config.Tag + "Menu manager is not available.");
+                return;
+            }
 
-        menu.Add(Localizer["Cancel Bet Menu"], (p, option) =>
-        {
-            manager.CloseMenu(p);
-        });
+            IWasdMenu menu = manager.CreateMenu(Localizer["menu_title", credits]);
 
-        manager.OpenMainMenu(player, menu);
+            menu.Add("Terrorist", (p, option) =>
+            {
+                ProcessBetWasdMenu(p, info, credits, "Terrorist");
+                manager.CloseMenu(p);
+            });
+
+            menu.Add("CounterTerrorist", (p, option) =>
+            {
+                ProcessBetWasdMenu(p, info, credits, "CounterTerrorist");
+                manager.CloseMenu(p);
+            });
+
+            menu.Add(Localizer["Cancel Bet Menu"], (p, option) =>
+            {
+                manager.CloseMenu(p);
+            });
+
+            manager.OpenMainMenu(player, menu);
+        }
     }
 
-    private void ProcessBet(CCSPlayerController player, CommandInfo info, int credits, string team)
+    private void ProcessBetWasdMenu(CCSPlayerController player, CommandInfo info, int credits, string team)
     {
         if (StoreApi == null)
         {
@@ -213,6 +241,66 @@ public class TeamBet : BasePlugin
         {
             Server.PrintToChatAll(Config.Tag + Localizer["Join bet", player.PlayerName, credits, Localizer[team]]);
         }
+        PlayersWhoBet.Add(player);
+    }
+
+    private void ProcessBetHtmlMenu(CCSPlayerController player, CenterHtmlMenu menu, CommandInfo info, int credits, string team)
+    {
+        string optionText = $"{team}";
+        menu.AddMenuOption(optionText, (player, menuOption) =>
+        {
+            ProcessBetHtmlMenuAction(player, info, credits, team);
+        });
+    }
+
+    private void AddCancelOptionToMenu(CenterHtmlMenu menu)
+    {
+        menu.AddMenuOption(Localizer["Cancel Bet Menu"], (selectedPlayer, option) =>
+        {
+            MenuManager.CloseActiveMenu(selectedPlayer);
+        });
+    }
+
+    private void ProcessBetHtmlMenuAction(CCSPlayerController player, CommandInfo info, int credits, string team)
+    {
+        if (StoreApi == null)
+        {
+            throw new Exception("StoreApi could not be located.");
+        }
+
+        int playerCredits = StoreApi.GetPlayerCredits(player);
+        if (playerCredits < credits)
+        {
+            info.ReplyToCommand(Config.Tag + Localizer["No Credits"]);
+            return;
+        }
+
+        StoreApi.GivePlayerCredits(player, -credits);
+
+        if (!GlobalBet.ContainsKey(team))
+        {
+            GlobalBet[team] = new Dictionary<CCSPlayerController, int>();
+        }
+
+        if (GlobalBet[team].ContainsKey(player))
+        {
+            GlobalBet[team][player] += credits;
+        }
+        else
+        {
+            GlobalBet[team].Add(player, credits);
+        }
+
+        if (!Config.Settings.ShowBetToAllPlayer)
+        {
+            player.PrintToChat(Config.Tag + Localizer["Join bet", player.PlayerName, credits, Localizer[team]]);
+        }
+        else
+        {
+            Server.PrintToChatAll(Config.Tag + Localizer["Join bet", player.PlayerName, credits, Localizer[team]]);
+        }
+
+        PlayersWhoBet.Add(player);
     }
 
     [GameEventHandler(HookMode.Pre)]
@@ -282,7 +370,7 @@ public class TeamBet : BasePlugin
         {
             isBettingAllowed = true;
         }
-
+        PlayersWhoBet.Clear();
         GlobalBet.Clear();
         hasProcessedRoundEnd = false;
 

@@ -45,6 +45,9 @@ public static class Config_Config
             RemoveBetIfPlayerChangedTeam = bool.Parse(settingsTable["RemovePlayerBetIfChangedTeam"].ToString()!),
             TMultiplier = int.Parse(settingsTable["TMultiplier"].ToString()!),
             CTMultiplier = int.Parse(settingsTable["CTMultiplier"].ToString()!),
+            ShowBetToAllPlayer = bool.Parse(settingsTable["ShowBetMessageToAll"].ToString()!),
+            BetTime = float.Parse(settingsTable["BetTime"].ToString()!),
+            UseWasdMenu = bool.Parse(settingsTable["UseWasdMenu"].ToString()!)
         };
 
         Config = new Cfg
@@ -75,9 +78,12 @@ public static class Config_Config
     }
     public class Config_Settings
     {
+        public bool UseWasdMenu { get; set; } = true;
         public int MinBet { get; set; } = 1;
         public int MaxBet { get; set; } = 500;
         public int MinPlayers { get; set; } = 4;
+        public bool ShowBetToAllPlayer { get; set; } = true;
+        public float BetTime { get; set; } = 120.0f;
         public bool RemoveBetIfPlayerChangedTeam { get; set; } = true;
         public int TMultiplier { get; set; } = 2;
         public int CTMultiplier { get; set; } = 2;
