@@ -47,7 +47,8 @@ public static class Config_Config
             CTMultiplier = int.Parse(settingsTable["CTMultiplier"].ToString()!),
             ShowBetToAllPlayer = bool.Parse(settingsTable["ShowBetMessageToAll"].ToString()!),
             BetTime = float.Parse(settingsTable["BetTime"].ToString()!),
-            UseWasdMenu = bool.Parse(settingsTable["UseWasdMenu"].ToString()!)
+            UseWasdMenu = bool.Parse(settingsTable["UseWasdMenu"].ToString()!),
+            MenuTimeout = int.Parse(settingsTable["MenuTimeout"].ToString()!)
         };
 
         Config = new Cfg
@@ -87,6 +88,7 @@ public static class Config_Config
         public bool RemoveBetIfPlayerChangedTeam { get; set; } = true;
         public int TMultiplier { get; set; } = 2;
         public int CTMultiplier { get; set; } = 2;
+        public int MenuTimeout { get; set; } = 5;
     }
 
     public class Config_Commands

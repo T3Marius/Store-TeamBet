@@ -17,8 +17,8 @@ namespace TeamBet;
 public class TeamBet : BasePlugin
 {
     public override string ModuleName => "Store Module [TeamBet]";
-    public override string ModuleVersion => "1.0.2";
-    public override string ModuleAuthor => "T3Marius";
+    public override string ModuleVersion => "1.0.3";
+    public override string ModuleAuthor => "T3Marius, GSM-RO";
     private IStoreApi? StoreApi { get; set; }
     public Timer? betTimer { get; set; }
 
@@ -156,51 +156,64 @@ public class TeamBet : BasePlugin
         }
         if (!Config.Settings.UseWasdMenu)
         {
-            using (new WithTemporaryCulture(player.GetLanguage()))
-            {
-                StringBuilder builder = new();
-                builder.AppendFormat(Localizer["menu_title", credits]);
-                CenterHtmlMenu menu = new(builder.ToString(), this)
-                {
-                    PostSelectAction = PostSelectAction.Close
-                };
-                ProcessBetHtmlMenu(player, menu, info, credits, "Terrorist");
-                ProcessBetHtmlMenu(player, menu, info, credits, "CounterTerrorist");
-                AddCancelOptionToMenu(menu);
-
-                MenuManager.OpenCenterHtmlMenu(this, player, menu);
-            }
-        }
-        else
+    using (new WithTemporaryCulture(player.GetLanguage()))
+    {
+        StringBuilder builder = new();
+        builder.AppendFormat(Localizer["menu_title", credits]);
+        CenterHtmlMenu menu = new(builder.ToString(), this)
         {
-            var manager = GetMenuManager();
-            if (manager == null)
-            {
-                info.ReplyToCommand(Config.Tag + "Menu manager is not available.");
-                return;
-            }
+            PostSelectAction = PostSelectAction.Close
+        };
+        ProcessBetHtmlMenu(player, menu, info, credits, "Terrorist");
+        ProcessBetHtmlMenu(player, menu, info, credits, "CounterTerrorist");
+        AddCancelOptionToMenu(menu);
 
-            IWasdMenu menu = manager.CreateMenu(Localizer["menu_title", credits]);
+        MenuManager.OpenCenterHtmlMenu(this, player, menu);
 
-            menu.Add("Terrorist", (p, option) =>
-            {
-                ProcessBetWasdMenu(p, info, credits, "Terrorist");
-                manager.CloseMenu(p);
-            });
-
-            menu.Add("CounterTerrorist", (p, option) =>
-            {
-                ProcessBetWasdMenu(p, info, credits, "CounterTerrorist");
-                manager.CloseMenu(p);
-            });
-
-            menu.Add(Localizer["Cancel Bet Menu"], (p, option) =>
-            {
-                manager.CloseMenu(p);
-            });
-
-            manager.OpenMainMenu(player, menu);
+        // ✅ Adăugat: Timer care închide meniul după X secunde
+        AddTimer(Config.Settings.MenuTimeout, () =>
+        {
+            MenuManager.CloseActiveMenu(player);
+        });
+    }
         }
+else
+{
+    var manager = GetMenuManager();
+    if (manager == null)
+    {
+        info.ReplyToCommand(Config.Tag + "Menu manager is not available.");
+        return;
+    }
+
+    IWasdMenu menu = manager.CreateMenu(Localizer["menu_title", credits]);
+
+    menu.Add("Terrorist", (p, option) =>
+    {
+        ProcessBetWasdMenu(p, info, credits, "Terrorist");
+        manager.CloseMenu(p);
+    });
+
+    menu.Add("CounterTerrorist", (p, option) =>
+    {
+        ProcessBetWasdMenu(p, info, credits, "CounterTerrorist");
+        manager.CloseMenu(p);
+    });
+
+    menu.Add(Localizer["Cancel Bet Menu"], (p, option) =>
+    {
+        manager.CloseMenu(p);
+    });
+
+    manager.OpenMainMenu(player, menu);
+
+    // ✅ Adăugat: Timer care închide meniul după X secunde
+    AddTimer(Config.Settings.MenuTimeout, () =>
+    {
+        manager.CloseMenu(player);
+    });
+}
+
     }
 
     private void ProcessBetWasdMenu(CCSPlayerController player, CommandInfo info, int credits, string team)

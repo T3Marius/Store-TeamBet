@@ -1,0 +1,19 @@
+{
+  "Join bet": "{blue}{0} {default}bet {green}{1} {default}credits on {green}{2}.",
+  "No Credits": "You don't have enough {red}credits{default}!",
+  "Must Be Integer": "The value you entered must be an {yellow}integer{default}.",
+  "Min Bet": "The value you entered must be higher than {green}{0} {white}.",
+  "Max Bet": "The value you entered must be lower than {green}{0} {white}.",
+  "menu_title": "TeamBet [Your bet: {0}]",
+  "menu_options": "{0} [{1}x]",
+  "Cannot bet during warmup": "{red}You can't bet during warmup.",
+  "YouWonMessage": "{green}You won {0} credits on this bet!",
+  "YouLostMessage": "{red}You lost {0} credits on this bet!",
+  "MinPlayers": "There must be at least {green}{0}{default} players to place a bet.",
+  "Bet Removed": "Bet {red}removed{default}, credits refunded: {green}{0}",
+  "Betting Close": "Betting is closed for this round.",
+  "Betting Open": "Betting is opened. Closing bets in: {0}",
+  "Empty Team": "Can't bet on an empty team.",
+  "Already Bet": "You aleardy put a {red}bet{default} this round!",
+  "Cancel Bet Menu": "Close"
+}

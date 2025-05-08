@@ -21,6 +21,7 @@ CTMultiplier = 2 #How much u gain if you win a bet
 ShowBetMessageToAll = false #Wheter to show bet message to all players or not.
 BetTime = 120 #How much time does players have to bet
 UseWasdMenu = false #Wheter to use WasdMenu or not
+MenuTimeout = 5 #Timeout for select Menu, prevent playersselect in last seconds
 
 ```
 [Support Me](https://paypal.me/vxaero?country.x=RO&locale.x=en_US)
